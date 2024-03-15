@@ -42,9 +42,11 @@ app.listen(port, () => {
 
 // routes
 const indexRoute = require("./index/indexRoute");
-app.use("/api/v1/", indexRoute);
+app.use("/api/v1", indexRoute);
 const userRoute = require("./user/userRoute");
-app.use("/api/v1/user/", userRoute);
+app.use("/api/v1/user", userRoute);
+const campaignRoute = require("./campaign/campaignRoute");
+app.use("/api/v1/campaign", campaignRoute);
 
 // middlewares
 app.use(errorHandler);
