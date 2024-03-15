@@ -28,7 +28,7 @@ class ServerErrorResponse extends CustomErrorResponse {
       res,
       "Internal server error",
       StatusCodes.INTERNAL_SERVER_ERROR,
-      error
+      error || "Internal Server Error"
     );
   }
 }
@@ -70,6 +70,7 @@ class LimitReachedErrorResponse extends CustomErrorResponse {
 }
 
 module.exports = {
+  CustomErrorResponse,
   ServerErrorResponse,
   ValidationErrorResponse,
   BadRequestErrorResponse,
