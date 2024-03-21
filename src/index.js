@@ -18,6 +18,11 @@ if (ifInDev()) app.use(morgan("tiny"));
 const errorHandler = require("./middleware/errorHandler");
 const pageNotFound = require("./middleware/pageNotFound");
 
+// routes imports
+const indexRoute = require("./index/indexRoute");
+const userRoute = require("./user/userRoute");
+const campaignRoute = require("./campaign/campaignRoute");
+
 // cors
 app.use(cors());
 // rate limiting
@@ -41,11 +46,8 @@ app.listen(port, () => {
 });
 
 // routes
-const indexRoute = require("./index/indexRoute");
 app.use("/api/v1", indexRoute);
-const userRoute = require("./user/userRoute");
 app.use("/api/v1/users", userRoute);
-const campaignRoute = require("./campaign/campaignRoute");
 app.use("/api/v1/campaigns", campaignRoute);
 
 // middlewares
