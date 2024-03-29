@@ -4,8 +4,8 @@ const {
   ValidationErrorResponse,
   ServerErrorResponse,
   CustomErrorResponse,
+  BadRequestErrorResponse,
 } = require("../shared/error/errorResponse");
-const userModel = require("./userModel");
 const {
   hashPassword,
   comparePassword,
@@ -13,8 +13,9 @@ const {
   attachCookie,
 } = require("./utils/auth.utils");
 const { createJwt } = require("./utils/jwt.utils");
-const registerValidation = require("./dto/register-user.dto");
-const loginValidation = require("./dto/login-user.dto");
+const registerValidation = require("./validations/register-user");
+const loginValidation = require("./validations/login-user");
+const userModel = require("./userModel");
 
 const register = async (req, res) => {
   try {
@@ -77,7 +78,9 @@ const login = async (req, res) => {
       process.env.TOKEN_EXPIRE,
       process.env.TOKEN_SECRET
     );
+    console.log(t, process.env.TOKEN_SECRET);
     attachCookie(t, res, "token");
+    console.log(res.cookie);
     return new SuccessResponse(res, "User logged in successfully!");
   } catch (err) {
     console.log(err.message, err.status || StatusCodes.INTERNAL_SERVER_ERROR);
@@ -90,8 +93,24 @@ const logout = async (req, res) => {
   res.status(200).json({ message: "User logged out successfully!" });
 };
 
+const user = async (req, res) => {
+  try {
+    const { user } = req;
+    const data = await userModel.findById(user.id);
+    if (!data) return new BadRequestErrorResponse(res, "User not found!");
+    const temp = {
+      _id: data._id, name: data.name, email: data.email
+    }
+    return new SuccessResponse(res, "User found successfully!", temp);
+  } catch (err) {
+    console.log(err.message, err.status || StatusCodes.INTERNAL_SERVER_ERROR);
+    return new ServerErrorResponse(res);
+  }
+};
+
 module.exports = {
   register,
   login,
   logout,
+  user,
 };

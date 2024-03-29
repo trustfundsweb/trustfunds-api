@@ -24,7 +24,11 @@ const userRoute = require("./user/userRoute");
 const campaignRoute = require("./campaign/campaignRoute");
 
 // cors
-app.use(cors());
+const corsOptions = {
+  origin: 'http://localhost:3000',
+  credentials: true
+};
+app.use(cors(corsOptions));
 // rate limiting
 // app.use(
 //   rateLimit({

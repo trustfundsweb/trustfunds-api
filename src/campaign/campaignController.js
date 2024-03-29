@@ -1,8 +1,11 @@
-const { CustomErrorResponse } = require("../shared/error/errorResponse");
+const mongoose = require("mongoose")
+const { CustomErrorResponse, ServerErrorResponse } = require("../shared/error/errorResponse");
 const SuccessResponse = require("../shared/success/successResponse");
 const causesList = require("../campaign/campaignModel");
 const { campaignUpdationValidation } = require("./validations/update-campaign");
 const { campaignCreationValidation } = require("./validations/create-campaign");
+const { campaignModel } = require("./campaignModel");
+const { StatusCodes } = require("http-status-codes");
 
 const getAllCampaigns = async (req, res) => {
   try {
@@ -42,6 +45,7 @@ const createCampaign = async (req, res) => {
       story: tempStory,
       creator: user.id,
     });
+
     await newCampaign.save();
   } catch (err) {
     console.error(err.message, err.status || StatusCodes.INTERNAL_SERVER_ERROR);

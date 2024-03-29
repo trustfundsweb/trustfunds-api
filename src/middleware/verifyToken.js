@@ -1,6 +1,6 @@
 const { StatusCodes } = require("http-status-codes");
 const CustomError = require("../shared/error/customError");
-const JwtOperations = require("../user/utils/jwt.utils");
+const { isTokenValid } = require("../user/utils/jwt.utils");
 
 const verifyToken = (req, res, next) => {
   let temp = req.headers?.cookie;
@@ -12,12 +12,8 @@ const verifyToken = (req, res, next) => {
     );
   }
 
-  const jwtOperations = new JwtOperations();
   try {
-    const tokenResponse = jwtOperations.isTokenValid(
-      token,
-      process.env.TOKEN_SECRET
-    );
+    const tokenResponse = isTokenValid(token, process.env.TOKEN_SECRET);
     if (!tokenResponse) {
       throw new CustomError(
         "Invalid token. Please login again!",
