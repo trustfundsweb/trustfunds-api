@@ -1,6 +1,7 @@
 const express = require("express");
 const app = express();
 
+// path and env config
 const path = require("path");
 const dotenv = require("dotenv");
 const root_dir = __dirname.split("src")[0];
@@ -10,6 +11,7 @@ const cors = require("cors");
 const bodyParser = require("body-parser");
 const connectDb = require("./config/connectDb");
 
+// morgan setup
 const ifInDev = () => process.env.NODE_ENV === "development";
 const morgan = require("morgan");
 if (ifInDev()) app.use(morgan("tiny"));
@@ -25,10 +27,11 @@ const campaignRoute = require("./campaign/campaignRoute");
 
 // cors
 const corsOptions = {
-  origin: 'http://localhost:3000',
+  origin: `${process.env.APP_URL}`,
   credentials: true
 };
 app.use(cors(corsOptions));
+
 // rate limiting
 // app.use(
 //   rateLimit({
@@ -46,7 +49,7 @@ connectDb(process.env.MONGO_URI);
 // start server
 const port = process.env.PORT || 5000;
 app.listen(port, () => {
-  console.log(`http://127.0.0.1:${port}`);
+  console.log(`App listening at ${process.env.APP_URL}:${port}`);
 });
 
 // routes
