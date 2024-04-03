@@ -1,5 +1,8 @@
-const mongoose = require("mongoose")
-const { CustomErrorResponse, ServerErrorResponse } = require("../shared/error/errorResponse");
+const mongoose = require("mongoose");
+const {
+  CustomErrorResponse,
+  ServerErrorResponse,
+} = require("../shared/error/errorResponse");
 const SuccessResponse = require("../shared/success/successResponse");
 const causesList = require("../campaign/campaignModel");
 const { campaignUpdationValidation } = require("./validations/update-campaign");

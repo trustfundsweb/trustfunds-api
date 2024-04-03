@@ -99,8 +99,10 @@ const user = async (req, res) => {
     const data = await userModel.findById(user.id);
     if (!data) return new BadRequestErrorResponse(res, "User not found!");
     const temp = {
-      _id: data._id, name: data.name, email: data.email
-    }
+      _id: data._id,
+      name: data.name,
+      email: data.email,
+    };
     return new SuccessResponse(res, "User found successfully!", temp);
   } catch (err) {
     console.log(err.message, err.status || StatusCodes.INTERNAL_SERVER_ERROR);

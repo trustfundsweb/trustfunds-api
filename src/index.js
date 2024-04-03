@@ -28,7 +28,7 @@ const campaignRoute = require("./campaign/campaignRoute");
 // cors
 const corsOptions = {
   origin: `${process.env.APP_URL}`,
-  credentials: true
+  credentials: true,
 };
 app.use(cors(corsOptions));
 
