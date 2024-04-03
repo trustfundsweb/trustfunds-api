@@ -49,7 +49,7 @@ connectDb(process.env.MONGO_URI);
 // start server
 const port = process.env.PORT || 5000;
 app.listen(port, () => {
-  console.log(`App listening at ${process.env.APP_URL}:${port}`);
+  console.log(`App listening at port ${port}`);
 });
 
 // routes
