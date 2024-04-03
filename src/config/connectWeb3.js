@@ -1,18 +1,17 @@
 const { Web3 } = require("web3");
 
 const port = "http://127.0.0.1:7545";
-const abiLink =
-  require("../../web3-trustfunds/build/contracts/Crowdfunding.json").abi;
+const abiLink = "../../web3-trustfunds/build/contracts/Crowdfunding.json";
 const contractAddr = "0xC1Ec1f36D415ADec5E1e514A2776B08Cb27DA926";
+let contract = null;
 
 const connectWeb3 = async () => {
   const web3 = new Web3(port);
-  const contractABI = require(abiLink).abi;
+  const contractABI = require(abiLink).abi
   const contractAddress = contractAddr;
 
   console.log("Contract Address:", contractAddress);
-  const contract = new web3.eth.Contract(contractABI, contractAddress);
-  console.log(contract);
+  contract = new web3.eth.Contract(contractABI, contractAddress);
   web3.eth
     .isSyncing()
     .then((syncing) => {
@@ -30,4 +29,4 @@ const connectWeb3 = async () => {
     });
 };
 
-module.exports = connectWeb3;
+module.exports = { connectWeb3, contract };
