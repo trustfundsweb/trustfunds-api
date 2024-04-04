@@ -10,7 +10,7 @@ dotenv.config({ path: path.join(root_dir, `.env`) });
 const cors = require("cors");
 const bodyParser = require("body-parser");
 const connectDb = require("./config/connectDb");
-const { connectWeb3 } = require("./config/connectWeb3")
+require("./config/connectWeb3")
 
 // morgan setup
 const ifInDev = () => process.env.NODE_ENV === "development";
@@ -46,9 +46,6 @@ app.use(express.json());
 
 // connect to mongDb
 connectDb(process.env.MONGO_URI);
-
-// connect to web3
-connectWeb3()
 
 // start server
 const port = process.env.PORT || 5000;

@@ -1,14 +1,17 @@
 const mongoose = require("mongoose");
+const { web3, contractABI } = require("../config/connectWeb3")
 const {
   CustomErrorResponse,
   ServerErrorResponse,
+  ValidationErrorResponse,
 } = require("../shared/error/errorResponse");
 const SuccessResponse = require("../shared/success/successResponse");
 const causesList = require("../campaign/campaignModel");
-const { campaignUpdationValidation } = require("./validations/update-campaign");
-const { campaignCreationValidation } = require("./validations/create-campaign");
+const campaignUpdationValidation = require("./validations/update-campaign");
+const campaignCreationValidation = require("./validations/create-campaign");
 const { campaignModel } = require("./campaignModel");
 const { StatusCodes } = require("http-status-codes");
+const { gasLimit, accountIndex } = require("../config/connectWeb3")
 
 const getAllCampaigns = async (req, res) => {
   try {
@@ -42,7 +45,6 @@ const createCampaign = async (req, res) => {
 
     let tempStory = body.story;
     tempStory = tempStory.filter((para) => para !== "");
-
     const newCampaign = new campaignModel({
       ...body,
       story: tempStory,
@@ -50,7 +52,30 @@ const createCampaign = async (req, res) => {
     });
 
     await newCampaign.save();
+
+    var dateString = body.endDate;
+    var dateObj = new Date(dateString);
+    var numberFormatDate = dateObj.getTime();
+
+    // blockchain part
+    if (!web3) return new CustomErrorResponse(res, "Error connecting to web3 network.", StatusCodes.INTERNAL_SERVER_ERROR)
+    const accounts = await web3.eth.getAccounts();
+    const manager = accounts[accountIndex];
+    // Deploy the contract 
+    const deployedContract = await new web3.eth.Contract(contractABI)
+      .deploy({
+        data: require("../../web3-trustfunds/build/contracts/Crowdfunding.json").bytecode,
+        arguments: [body.goal, numberFormatDate]
+      })
+      .send({
+        from: manager,
+        gas: gasLimit
+      });
+
+    const data = { contractAddress: deployedContract.options.address }
+    return new SuccessResponse(res, "Campaign created successfully and smart contract initiated!", data)
   } catch (err) {
+    console.log(err)
     console.error(err.message, err.status || StatusCodes.INTERNAL_SERVER_ERROR);
     return new ServerErrorResponse(res);
   }

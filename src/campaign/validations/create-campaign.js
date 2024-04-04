@@ -7,10 +7,9 @@ const campaignCreationValidation = (data) => {
     title: Joi.string().required(),
     story: Joi.array().items(Joi.string()).required(),
     goal: Joi.number().required(),
-    endDate: Joi.date().required(),
+    endDate: Joi.string().required(),
     image: Joi.string().uri().required(),
     causeType: Joi.string()
-      .valid(...causesList)
       .required(),
   });
   return schema.validate(data);
