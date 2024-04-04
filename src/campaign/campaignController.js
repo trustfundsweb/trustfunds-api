@@ -200,7 +200,22 @@ const searchForCampaign = async (req, res) => {
   const { q } = req.query
   console.log(q)
   try {
-    const data = {}
+    const campaigns = await campaignModel.find({
+      $or: [
+        { title: { $regex: new RegExp(q, 'i') } },
+        { story: { $regex: new RegExp(q, 'i') } }, 
+      ],
+    }).exec();
+
+    const data = campaigns.map((campaign) => ({
+      id: campaign.id,
+      title: campaign.title,
+      story: campaign.story, 
+      goal: campaign.goal,
+      endDate: campaign.endDate,
+      image: campaign.image,
+      causeType: campaign.causeType,
+    }));
     return new SuccessResponse(res, "Search results found!", data);
   } catch (err) {
     console.log(err.message, err.status || StatusCodes.INTERNAL_SERVER_ERROR);
