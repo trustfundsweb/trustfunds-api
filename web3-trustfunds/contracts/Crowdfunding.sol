@@ -1,5 +1,4 @@
 pragma solidity >=0.4.22 <0.9.0;
-// SPDX-License-Identifier: MIT
 
 contract Crowdfunding {
     struct Request {
@@ -21,6 +20,12 @@ contract Crowdfunding {
     uint public raisedAmount;
     uint public minContribution;
 
+    event ContributionReceived(address indexed contributor, uint amount);
+    event RefundProcessed(address indexed contributor, uint amount);
+    event RequestCreated(uint indexed requestNo, string description, address indexed recipient, uint value);
+    event RequestCompleted(uint indexed requestNo, uint value);
+    event FundsReleased(uint indexed requestNo, uint value);
+
     constructor(uint _target, uint _deadline) {
         target = _target;
         deadline = block.timestamp + _deadline;
@@ -33,7 +38,7 @@ contract Crowdfunding {
         _;
     }
 
-    function createRequests(string calldata _description, address payable _recipient, uint _value) public onlyManager {
+    function createRequest(string memory _description, address payable _recipient, uint _value) public onlyManager {
         Request storage newRequest = requests[noOfRequests];
         noOfRequests++;
         newRequest.description = _description;
@@ -41,9 +46,11 @@ contract Crowdfunding {
         newRequest.value = _value;
         newRequest.completed = false;
         newRequest.noOfVoters = 0;
+
+        emit RequestCreated(noOfRequests - 1, _description, _recipient, _value);
     }
 
-    function contribution() public payable {
+    function contribute() public payable {
         require(block.timestamp < deadline, "Deadline has passed");
         require(msg.value >= minContribution, "Minimum contribution required is 100 wei");
 
@@ -52,38 +59,49 @@ contract Crowdfunding {
         }
         contributors[msg.sender] += msg.value;
         raisedAmount += msg.value;
+
+        emit ContributionReceived(msg.sender, msg.value);
     }
 
-    function getContractBalance() public view returns(uint) {
-        return address(this).balance;
-    }
-
-    function refund() public {
-        require(block.timestamp > deadline && raisedAmount < target, "You are not eligible for a refund");
+    function withdrawContribution() public {
+        require(block.timestamp < deadline, "Deadline has passed");
         require(contributors[msg.sender] > 0, "You are not a contributor");
-        payable(msg.sender).transfer(contributors[msg.sender]);
+
+        uint amountToWithdraw = contributors[msg.sender];
         contributors[msg.sender] = 0;
+        payable(msg.sender).transfer(amountToWithdraw);
+
+        emit RefundProcessed(msg.sender, amountToWithdraw);
     }
 
     function voteRequest(uint _requestNo) public {
+        require(block.timestamp < deadline, "Deadline has passed");
         require(contributors[msg.sender] > 0, "You are not a contributor");
         require(_requestNo < noOfRequests, "Invalid request number");
         Request storage thisRequest = requests[_requestNo];
         require(thisRequest.voters[msg.sender] == false, "You have already voted");
+
         thisRequest.voters[msg.sender] = true;
         thisRequest.noOfVoters++;
     }
 
     function makePayment(uint _requestNo) public onlyManager {
+        require(block.timestamp > deadline, "Deadline not reached yet");
         require(raisedAmount >= target, "Target amount is not received");
         require(_requestNo < noOfRequests, "Invalid request number");
         Request storage thisRequest = requests[_requestNo];
         require(thisRequest.completed == false, "The request has been completed");
         require(thisRequest.noOfVoters > noOfContributors / 2, "Majority does not support the request");
         require(address(this).balance >= thisRequest.value, "Insufficient contract balance");
-        
+
         thisRequest.recipient.transfer(thisRequest.value);
         thisRequest.completed = true;
+
+        emit FundsReleased(_requestNo, thisRequest.value);
+        emit RequestCompleted(_requestNo, thisRequest.value);
+    }
+
+    function getContractBalance() public view returns(uint) {
+        return address(this).balance;
     }
 }
-
