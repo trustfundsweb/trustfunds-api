@@ -166,6 +166,7 @@ const updateCampaign = async (req, res) => {
     campaign.causeType = body.causeType || campaign.causeType;
 
     await campaign.save();
+    return new SuccessResponse(res, "Action completed successfully!", data);
   } catch (err) {
     console.log(err.message, err.status || StatusCodes.INTERNAL_SERVER_ERROR);
     return new ServerErrorResponse(res);
@@ -195,6 +196,19 @@ const makeDonation = async (req, res) => {
   res.status(200).json({ message: "makeDonation" });
 };
 
+const searchForCampaign = async (req, res) => {
+  const { q } = req.query
+  console.log(q)
+  try {
+    const data = {}
+    return new SuccessResponse(res, "Search results found!", data);
+  } catch (err) {
+    console.log(err.message, err.status || StatusCodes.INTERNAL_SERVER_ERROR);
+    return new ServerErrorResponse(res);
+  }
+}
+
+
 module.exports = {
   getAllCampaigns,
   getCausesList,
@@ -204,4 +218,5 @@ module.exports = {
   updateCampaign,
   deleteCampaign,
   makeDonation,
+  searchForCampaign
 };
