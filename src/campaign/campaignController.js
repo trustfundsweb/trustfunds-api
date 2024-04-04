@@ -45,17 +45,10 @@ const createCampaign = async (req, res) => {
 
     let tempStory = body.story;
     tempStory = tempStory.filter((para) => para !== "");
-    const newCampaign = new campaignModel({
-      ...body,
-      story: tempStory,
-      creator: user.id,
-    });
 
-    await newCampaign.save();
-
-    var dateString = body.endDate;
-    var dateObj = new Date(dateString);
-    var numberFormatDate = dateObj.getTime();
+    // convert string date to time in seconds
+    let dateObj = new Date(body.endDate);
+    let numberFormatDate = dateObj.getTime();
 
     // blockchain part
     if (!web3) return new CustomErrorResponse(res, "Error connecting to web3 network.", StatusCodes.INTERNAL_SERVER_ERROR)
@@ -72,8 +65,16 @@ const createCampaign = async (req, res) => {
         gas: gasLimit
       });
 
-    const data = { contractAddress: deployedContract.options.address }
-    return new SuccessResponse(res, "Campaign created successfully and smart contract initiated!", data)
+    if (!deployedContract.options.address) return new CustomErrorResponse(res, "Could not create contract.", StatusCodes.BAD_REQUEST)
+    const newCampaign = new campaignModel({
+      ...body,
+      story: tempStory,
+      creator: user.id,
+      contractAddress: deployedContract.options.address
+    });
+    await newCampaign.save();
+
+    return new SuccessResponse(res, "Campaign created successfully and smart contract initiated!", newCampaign)
   } catch (err) {
     console.log(err)
     console.error(err.message, err.status || StatusCodes.INTERNAL_SERVER_ERROR);
