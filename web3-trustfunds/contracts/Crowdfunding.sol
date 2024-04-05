@@ -1,4 +1,5 @@
 pragma solidity >=0.4.22 <0.9.0;
+// SPDX-License-Identifier: MIT
 
 contract Crowdfunding {
     struct Request {
@@ -6,96 +7,82 @@ contract Crowdfunding {
         address payable recipient;
         uint value;
         bool completed;
+        uint noOfVoters;
+        mapping(address => bool) voters;
     }
 
-    address public creator;
-    uint256 public fundingGoal;
-    uint256 public totalFunds;
-    bool public fundingGoalReached;
-    mapping(address => uint256) public contributions;
-    mapping(address => bool) public backers;
-    mapping(uint256 => Request) public requests;
+    mapping(address => uint) public contributors;
+    mapping(uint => Request) public requests;
+    address public manager;
+    uint public target;
     uint public noOfRequests;
     uint public noOfContributors;
     uint public deadline;
     uint public raisedAmount;
     uint public minContribution;
 
-    event ContributionReceived(address indexed contributor, uint amount);
-    event RefundProcessed(address indexed contributor, uint amount);
-    event RequestCreated(uint indexed requestNo, string description, address indexed recipient, uint value);
-    event RequestCompleted(uint indexed requestNo, uint value);
-    event FundsReleased(uint indexed requestNo, uint value);
-    event MilestoneReached(uint indexed milestoneNo);
-
-    modifier onlyCreator() {
-        require(msg.sender == creator, "You are not the creator");
-        _;
-    }
-
-    modifier goalNotReached() {
-        require(!fundingGoalReached, "Funding goal has already been reached");
-        _;
-    }
-
-    constructor(uint256 _fundingGoal) {
-        creator = msg.sender;
-        fundingGoal = _fundingGoal;
+    constructor(uint _target, uint _deadline) {
+        target = _target;
+        deadline = block.timestamp + _deadline;
         minContribution = 100 wei;
-        deadline = block.timestamp + 30 days; 
+        manager = msg.sender;
     }
 
-    function contribute() public payable {
-        require(block.timestamp < deadline, "Deadline has passed");
-        require(msg.value >= minContribution, "Minimum contribution required is 100 wei");
-
-        if (!backers[msg.sender]) {
-            noOfContributors++;
-        }
-        contributions[msg.sender] += msg.value;
-        totalFunds += msg.value;
-        backers[msg.sender] = true;
-
-        emit ContributionReceived(msg.sender, msg.value);
-        checkFundingGoal();
+    modifier onlyManager() {
+        require(msg.sender == manager, "You are not the manager");
+        _;
     }
 
-    function checkFundingGoal() internal {
-        if (totalFunds >= fundingGoal) {
-            fundingGoalReached = true;
-        }
-    }
-
-    function withdrawFunds() public onlyCreator goalNotReached {
-        payable(creator).transfer(totalFunds);
-    }
-
-    function createRequest(string memory _description, address payable _recipient, uint _value) public onlyCreator {
+    function createRequests(string calldata _description, address payable _recipient, uint _value) public onlyManager {
         Request storage newRequest = requests[noOfRequests];
         noOfRequests++;
         newRequest.description = _description;
         newRequest.recipient = _recipient;
         newRequest.value = _value;
         newRequest.completed = false;
-
-        emit RequestCreated(noOfRequests - 1, _description, _recipient, _value);
+        newRequest.noOfVoters = 0;
     }
 
-    function makePayment(uint _requestNo) public onlyCreator {
-        require(fundingGoalReached, "Funding goal not reached");
-        require(_requestNo < noOfRequests, "Invalid request number");
-        Request storage thisRequest = requests[_requestNo];
-        require(thisRequest.completed == false, "The request has been completed");
-        require(address(this).balance >= thisRequest.value, "Insufficient contract balance");
+    function contribution() public payable {
+        require(block.timestamp < deadline, "Deadline has passed");
+        require(msg.value >= minContribution, "Minimum contribution required is 100 wei");
 
-        thisRequest.recipient.transfer(thisRequest.value);
-        thisRequest.completed = true;
-
-        emit FundsReleased(_requestNo, thisRequest.value);
-        emit RequestCompleted(_requestNo, thisRequest.value);
+        if (contributors[msg.sender] == 0) {
+            noOfContributors++;
+        }
+        contributors[msg.sender] += msg.value;
+        raisedAmount += msg.value;
     }
 
     function getContractBalance() public view returns(uint) {
         return address(this).balance;
+    }
+
+    function refund() public {
+        require(block.timestamp > deadline && raisedAmount < target, "You are not eligible for a refund");
+        require(contributors[msg.sender] > 0, "You are not a contributor");
+        payable(msg.sender).transfer(contributors[msg.sender]);
+        contributors[msg.sender] = 0;
+    }
+
+    function voteRequest(uint _requestNo) public {
+        require(contributors[msg.sender] > 0, "You are not a contributor");
+        require(_requestNo < noOfRequests, "Invalid request number");
+        Request storage thisRequest = requests[_requestNo];
+        require(thisRequest.voters[msg.sender] == false, "You have already voted");
+        thisRequest.voters[msg.sender] = true;
+        thisRequest.noOfVoters++;
+    }
+
+    function makePayment(uint _requestNo) public onlyManager {
+        require(raisedAmount >= target, "Target amount is not received");
+        require(_requestNo < noOfRequests, "Invalid request number");
+        Request storage thisRequest = requests[_requestNo];
+        require(thisRequest.completed == false, "The request has been completed");
+        require(thisRequest.noOfVoters > noOfContributors / 2, "Majority does not support the request");
+        require(address(this).balance >= thisRequest.value, "Insufficient contract balance");
+        
+        thisRequest.recipient.transfer(thisRequest.value);
+        thisRequest.completed = true;
     }
 }

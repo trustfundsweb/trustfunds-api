@@ -23,11 +23,13 @@ const clearCookie = (res, name) => {
 
 const hashPassword = async (password) => {
   const salt = await bcrypt.genSalt(10);
-  return await bcrypt.hash(password, salt);
+  let hashed = await bcrypt.hash(password, salt);
+  return hashed
 };
 
 const comparePassword = async (password, hashedPassword) => {
-  return await bcrypt.compare(password, hashedPassword);
+  let isSame = await bcrypt.compare(password, hashedPassword);
+  return isSame
 };
 
 module.exports = {
