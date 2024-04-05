@@ -208,7 +208,7 @@ const searchForCampaign = async (req, res) => {
     }).exec();
 
     const data = campaigns.map((campaign) => ({
-      id: campaign.id,
+      name: campaign.name,
       title: campaign.title,
       story: campaign.story, 
       goal: campaign.goal,
