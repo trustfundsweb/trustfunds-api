@@ -9,7 +9,7 @@ const {
   updateCampaign,
   deleteCampaign,
   makeDonation,
-  searchForCampaign
+  searchForCampaign,
 } = require("./campaignController");
 const verifyToken = require("../middleware/verifyToken");
 

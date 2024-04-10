@@ -10,7 +10,7 @@ dotenv.config({ path: path.join(root_dir, `.env`) });
 const cors = require("cors");
 const bodyParser = require("body-parser");
 const connectDb = require("./config/connectDb");
-require("./config/connectWeb3")
+require("./config/connectWeb3");
 
 // morgan setup
 const ifInDev = () => process.env.NODE_ENV === "development";

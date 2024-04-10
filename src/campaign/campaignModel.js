@@ -53,8 +53,8 @@ const campaignSchema = new mongoose.Schema({
   },
   contractAddress: {
     type: String,
-    required: true
-  }
+    required: true,
+  },
 });
 
 const campaignModel = mongoose.model("Campaign", campaignSchema);

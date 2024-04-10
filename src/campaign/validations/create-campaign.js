@@ -9,8 +9,7 @@ const campaignCreationValidation = (data) => {
     goal: Joi.number().required(),
     endDate: Joi.string().required(),
     image: Joi.string().uri().required(),
-    causeType: Joi.string()
-      .required(),
+    causeType: Joi.string().required(),
   });
   return schema.validate(data);
 };

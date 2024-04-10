@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-const { web3, contractABI } = require("../config/connectWeb3")
+const { web3, contractABI } = require("../config/connectWeb3");
 const {
   CustomErrorResponse,
   ServerErrorResponse,
@@ -11,7 +11,7 @@ const campaignUpdationValidation = require("./validations/update-campaign");
 const campaignCreationValidation = require("./validations/create-campaign");
 const { campaignModel } = require("./campaignModel");
 const { StatusCodes } = require("http-status-codes");
-const { gasLimit, accountIndex } = require("../config/connectWeb3")
+const { gasLimit, accountIndex } = require("../config/connectWeb3");
 
 const getAllCampaigns = async (req, res) => {
   try {
@@ -51,32 +51,47 @@ const createCampaign = async (req, res) => {
     let numberFormatDate = dateObj.getTime();
 
     // blockchain part
-    if (!web3) return new CustomErrorResponse(res, "Error connecting to web3 network.", StatusCodes.INTERNAL_SERVER_ERROR)
+    if (!web3)
+      return new CustomErrorResponse(
+        res,
+        "Error connecting to web3 network.",
+        StatusCodes.INTERNAL_SERVER_ERROR
+      );
     const accounts = await web3.eth.getAccounts();
     const manager = accounts[accountIndex];
-    // Deploy the contract 
+    // Deploy the contract
     const deployedContract = await new web3.eth.Contract(contractABI)
       .deploy({
-        data: require("../../web3-trustfunds/build/contracts/Crowdfunding.json").bytecode,
-        arguments: [body.goal, numberFormatDate]
+        data: require("../../web3-trustfunds/build/contracts/Crowdfunding.json")
+          .bytecode,
+        arguments: [body.goal, numberFormatDate],
       })
       .send({
         from: manager,
-        gas: gasLimit
+        gas: gasLimit,
       });
 
-    if (!deployedContract.options.address) return new CustomErrorResponse(res, "Could not create contract.", StatusCodes.BAD_REQUEST)
+    if (!deployedContract.options.address)
+      return new CustomErrorResponse(
+        res,
+        "Could not create contract.",
+        StatusCodes.BAD_REQUEST
+      );
     const newCampaign = new campaignModel({
       ...body,
       story: tempStory,
       creator: user.id,
-      contractAddress: deployedContract.options.address
+      contractAddress: deployedContract.options.address,
     });
     await newCampaign.save();
 
-    return new SuccessResponse(res, "Campaign created successfully and smart contract initiated!", newCampaign)
+    return new SuccessResponse(
+      res,
+      "Campaign created successfully and smart contract initiated!",
+      newCampaign
+    );
   } catch (err) {
-    console.log(err)
+    console.log(err);
     console.error(err.message, err.status || StatusCodes.INTERNAL_SERVER_ERROR);
     return new ServerErrorResponse(res);
   }
@@ -197,20 +212,22 @@ const makeDonation = async (req, res) => {
 };
 
 const searchForCampaign = async (req, res) => {
-  const { q } = req.query
-  console.log(q)
+  const { q } = req.query;
+  console.log(q);
   try {
-    const campaigns = await campaignModel.find({
-      $or: [
-        { title: { $regex: new RegExp(q, 'i') } },
-        { story: { $regex: new RegExp(q, 'i') } }, 
-      ],
-    }).exec();
+    const campaigns = await campaignModel
+      .find({
+        $or: [
+          { title: { $regex: new RegExp(q, "i") } },
+          { story: { $regex: new RegExp(q, "i") } },
+        ],
+      })
+      .exec();
 
     const data = campaigns.map((campaign) => ({
       name: campaign.name,
       title: campaign.title,
-      story: campaign.story, 
+      story: campaign.story,
       goal: campaign.goal,
       endDate: campaign.endDate,
       image: campaign.image,
@@ -221,8 +238,7 @@ const searchForCampaign = async (req, res) => {
     console.log(err.message, err.status || StatusCodes.INTERNAL_SERVER_ERROR);
     return new ServerErrorResponse(res);
   }
-}
-
+};
 
 module.exports = {
   getAllCampaigns,
@@ -233,5 +249,5 @@ module.exports = {
   updateCampaign,
   deleteCampaign,
   makeDonation,
-  searchForCampaign
+  searchForCampaign,
 };
