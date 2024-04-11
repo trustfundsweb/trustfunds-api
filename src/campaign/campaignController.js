@@ -219,21 +219,12 @@ const searchForCampaign = async (req, res) => {
       .find({
         $or: [
           { title: { $regex: new RegExp(q, "i") } },
-          { story: { $regex: new RegExp(q, "i") } },
+          { name: { $regex: new RegExp(q, "i") } },
         ],
       })
       .exec();
 
-    const data = campaigns.map((campaign) => ({
-      name: campaign.name,
-      title: campaign.title,
-      story: campaign.story,
-      goal: campaign.goal,
-      endDate: campaign.endDate,
-      image: campaign.image,
-      causeType: campaign.causeType,
-    }));
-    return new SuccessResponse(res, "Search results found!", data);
+    return new SuccessResponse(res, "Search results found!", [...campaigns]);
   } catch (err) {
     console.log(err.message, err.status || StatusCodes.INTERNAL_SERVER_ERROR);
     return new ServerErrorResponse(res);
