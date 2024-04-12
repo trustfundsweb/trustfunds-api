@@ -55,6 +55,22 @@ const campaignSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  milestones: [
+    {
+      description: {
+        type: String,
+        required: true,
+      },
+      date: {
+        type: String,
+        required: true,
+      },
+      funds: {
+        type: Number,
+        required: true,
+      },
+    },
+  ],
 });
 
 const campaignModel = mongoose.model("Campaign", campaignSchema);

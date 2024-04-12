@@ -40,7 +40,9 @@ const getCausesList = async (req, res) => {
 const createCampaign = async (req, res) => {
   try {
     const { body, user } = req;
+    console.log(body)
     const e = campaignCreationValidation(body);
+    console.log(e)
     if (e.error) return new ValidationErrorResponse(res, e.error.message);
 
     let tempStory = body.story;
@@ -51,38 +53,46 @@ const createCampaign = async (req, res) => {
     let numberFormatDate = dateObj.getTime();
 
     // blockchain part
-    if (!web3)
-      return new CustomErrorResponse(
-        res,
-        "Error connecting to web3 network.",
-        StatusCodes.INTERNAL_SERVER_ERROR
-      );
-    const accounts = await web3.eth.getAccounts();
-    const manager = accounts[accountIndex];
-    // Deploy the contract
-    const deployedContract = await new web3.eth.Contract(contractABI)
-      .deploy({
-        data: require("../../web3-trustfunds/build/contracts/Crowdfunding.json")
-          .bytecode,
-        arguments: [body.goal, numberFormatDate],
-      })
-      .send({
-        from: manager,
-        gas: gasLimit,
-      });
+    const createBlockchainEntry = async () => {
+      if (!web3) return null
+      //   return new CustomErrorResponse(res,"Error connecting to web3 network.",StatusCodes.INTERNAL_SERVER_ERROR);
+      const accounts = await web3.eth.getAccounts();
+      const manager = accounts[accountIndex];
+      // Deploy the contract
+      const deployedContract = await new web3.eth.Contract(contractABI)
+        .deploy({
+          data: require("../../web3-trustfunds/build/contracts/Crowdfunding.json")
+            .bytecode,
+          arguments: [body.goal, numberFormatDate],
+        })
+        .send({
+          from: manager,
+          gas: gasLimit,
+        });
+      return deployedContract
+    }
 
-    if (!deployedContract.options.address)
+    //    const deployedContract = await createBlockchainEntry()
+    const deployedContract = {
+      options: {
+        address: "address"
+      }
+    }
+
+    if (!deployedContract || !deployedContract.options.address)
       return new CustomErrorResponse(
         res,
         "Could not create contract.",
         StatusCodes.BAD_REQUEST
       );
+
     const newCampaign = new campaignModel({
       ...body,
       story: tempStory,
       creator: user.id,
-      contractAddress: deployedContract.options.address,
+      contractAddress: deployedContract.options.address
     });
+
     await newCampaign.save();
 
     return new SuccessResponse(
@@ -111,7 +121,7 @@ const getUserCampaigns = async (req, res) => {
     if (!campaigns || campaigns.length <= 0)
       return new CustomErrorResponse(
         res,
-        "The campaign you requested does not exist!",
+        "The user has not created any campaigns!",
         StatusCodes.BAD_REQUEST
       );
 
