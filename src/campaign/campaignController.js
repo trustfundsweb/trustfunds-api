@@ -40,9 +40,9 @@ const getCausesList = async (req, res) => {
 const createCampaign = async (req, res) => {
   try {
     const { body, user } = req;
-    console.log(body)
+    console.log(body);
     const e = campaignCreationValidation(body);
-    console.log(e)
+    console.log(e);
     if (e.error) return new ValidationErrorResponse(res, e.error.message);
 
     let tempStory = body.story;
@@ -54,7 +54,7 @@ const createCampaign = async (req, res) => {
 
     // blockchain part
     const createBlockchainEntry = async () => {
-      if (!web3) return null
+      if (!web3) return null;
       //   return new CustomErrorResponse(res,"Error connecting to web3 network.",StatusCodes.INTERNAL_SERVER_ERROR);
       const accounts = await web3.eth.getAccounts();
       const manager = accounts[accountIndex];
@@ -69,15 +69,15 @@ const createCampaign = async (req, res) => {
           from: manager,
           gas: gasLimit,
         });
-      return deployedContract
-    }
+      return deployedContract;
+    };
 
     //    const deployedContract = await createBlockchainEntry()
     const deployedContract = {
       options: {
-        address: "address"
-      }
-    }
+        address: "address",
+      },
+    };
 
     if (!deployedContract || !deployedContract.options.address)
       return new CustomErrorResponse(
@@ -90,7 +90,7 @@ const createCampaign = async (req, res) => {
       ...body,
       story: tempStory,
       creator: user.id,
-      contractAddress: deployedContract.options.address
+      contractAddress: deployedContract.options.address,
     });
 
     await newCampaign.save();
@@ -110,12 +110,6 @@ const createCampaign = async (req, res) => {
 const getUserCampaigns = async (req, res) => {
   try {
     const { id } = req.user;
-    if (!mongoose.isValidObjectId(id))
-      return new CustomErrorResponse(
-        res,
-        "Invalid user ID!",
-        StatusCodes.BAD_REQUEST
-      );
 
     const campaigns = await campaignModel.find({ creator: id });
     if (!campaigns || campaigns.length <= 0)
@@ -130,6 +124,35 @@ const getUserCampaigns = async (req, res) => {
       "Campaigns fetched successfully!",
       campaigns
     );
+  } catch (err) {
+    console.error(err.message, err.status || StatusCodes.INTERNAL_SERVER_ERROR);
+    return new ServerErrorResponse(res);
+  }
+};
+
+const getUserCampaign = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const { id } = req.params;
+    if (!id)
+      return new BadRequestErrorResponse(res, "Campaign id not present!");
+
+    const data = await campaignModel.findById(id);
+    if (!data)
+      return new CustomErrorResponse(
+        res,
+        "The campaign you requested does not exist!",
+        StatusCodes.BAD_REQUEST
+      );
+    if (data.creator != userId)
+      return new CustomErrorResponse(
+        res,
+        "The campaign you requested was not created by you!",
+        StatusCodes.FORBIDDEN
+      );
+
+    return new SuccessResponse(res, "Action completed successfully!", data);
   } catch (err) {
     console.error(err.message, err.status || StatusCodes.INTERNAL_SERVER_ERROR);
     return new ServerErrorResponse(res);
@@ -246,6 +269,7 @@ module.exports = {
   getCausesList,
   createCampaign,
   getUserCampaigns,
+  getUserCampaign,
   getCampaignById,
   updateCampaign,
   deleteCampaign,

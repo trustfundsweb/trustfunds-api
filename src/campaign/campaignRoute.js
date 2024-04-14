@@ -10,6 +10,7 @@ const {
   deleteCampaign,
   makeDonation,
   searchForCampaign,
+  getUserCampaign,
 } = require("./campaignController");
 const verifyToken = require("../middleware/verifyToken");
 
@@ -17,6 +18,7 @@ router.route("/all").get(getAllCampaigns);
 router.route("/causes").get(getCausesList);
 router.route("/create").post(verifyToken, createCampaign);
 router.route("/user").get(verifyToken, getUserCampaigns);
+router.route("/user/:id").get(verifyToken, getUserCampaign);
 router.route("/search").get(searchForCampaign);
 router.route("/:id").get(getCampaignById);
 router.route("/:id").put(verifyToken, updateCampaign);
