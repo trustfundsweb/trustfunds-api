@@ -4,6 +4,7 @@ const {
   CustomErrorResponse,
   ServerErrorResponse,
   ValidationErrorResponse,
+  BadRequestErrorResponse,
 } = require("../shared/error/errorResponse");
 const SuccessResponse = require("../shared/success/successResponse");
 const causesList = require("../campaign/campaignModel");
@@ -263,6 +264,27 @@ const searchForCampaign = async (req, res) => {
     return new ServerErrorResponse(res);
   }
 };
+
+const getMessagesById = async (req, res) => {
+  try {
+    const { slug } = req.params;
+    if (!slug)
+      return new BadRequestErrorResponse(res, "Campaign not present!");
+    const campaign = await campaignModel.findOne({ slug }).populate('messages.sender');
+    if (!campaign)
+      return new CustomErrorResponse(
+        res,
+        "Campaign Invalid",
+        StatusCodes.BAD_REQUEST
+      );
+
+    return new SuccessResponse(res, "Action completed successfully!", campaign.messages);
+  } catch (err) {
+    console.error(err.message, err.status || StatusCodes.INTERNAL_SERVER_ERROR);
+    return new ServerErrorResponse(res);
+  }
+};
+
 
 module.exports = {
   getAllCampaigns,

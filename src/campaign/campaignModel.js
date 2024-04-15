@@ -71,6 +71,7 @@ const campaignSchema = new mongoose.Schema({
       },
     },
   ],
+
 });
 
 const campaignModel = mongoose.model("Campaign", campaignSchema);
