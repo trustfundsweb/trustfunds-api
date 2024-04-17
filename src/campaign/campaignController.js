@@ -1,5 +1,10 @@
 const mongoose = require("mongoose");
-const { web3, contractABI } = require("../config/connectWeb3");
+const {
+  web3,
+  contractABI,
+  gasLimit,
+  accountIndex,
+} = require("../blockchain/connectWeb3");
 const {
   CustomErrorResponse,
   ServerErrorResponse,
@@ -12,7 +17,6 @@ const campaignUpdationValidation = require("./validations/update-campaign");
 const campaignCreationValidation = require("./validations/create-campaign");
 const { campaignModel } = require("./campaignModel");
 const { StatusCodes } = require("http-status-codes");
-const { gasLimit, accountIndex } = require("../config/connectWeb3");
 
 const getAllCampaigns = async (req, res) => {
   try {
@@ -31,6 +35,7 @@ const getAllCampaigns = async (req, res) => {
     );
   } catch (err) {
     console.error(err.message, err.status);
+    return new ServerErrorResponse(res);
   }
 };
 
@@ -268,9 +273,10 @@ const searchForCampaign = async (req, res) => {
 const getMessagesById = async (req, res) => {
   try {
     const { slug } = req.params;
-    if (!slug)
-      return new BadRequestErrorResponse(res, "Campaign not present!");
-    const campaign = await campaignModel.findOne({ slug }).populate('messages.sender');
+    if (!slug) return new BadRequestErrorResponse(res, "Campaign not present!");
+    const campaign = await campaignModel
+      .findOne({ slug })
+      .populate("messages.sender");
     if (!campaign)
       return new CustomErrorResponse(
         res,
@@ -278,13 +284,16 @@ const getMessagesById = async (req, res) => {
         StatusCodes.BAD_REQUEST
       );
 
-    return new SuccessResponse(res, "Action completed successfully!", campaign.messages);
+    return new SuccessResponse(
+      res,
+      "Action completed successfully!",
+      campaign.messages
+    );
   } catch (err) {
     console.error(err.message, err.status || StatusCodes.INTERNAL_SERVER_ERROR);
     return new ServerErrorResponse(res);
   }
 };
-
 
 module.exports = {
   getAllCampaigns,
