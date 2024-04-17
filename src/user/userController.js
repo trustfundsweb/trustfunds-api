@@ -56,8 +56,10 @@ const login = async (req, res) => {
     // checking if user present
     const { email, password } = body;
     const user = await userModel.findOne({ email });
+    console.log(user);
     if (!user)
       return new CustomErrorResponse(
+        res,
         "User not registered. Register first!",
         StatusCodes.CONFLICT
       );
