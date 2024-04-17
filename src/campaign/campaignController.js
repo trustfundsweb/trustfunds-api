@@ -1,11 +1,5 @@
 const mongoose = require("mongoose");
 const {
-  web3,
-  contractABI,
-  gasLimit,
-  accountIndex,
-} = require("../blockchain/connectWeb3");
-const {
   CustomErrorResponse,
   ServerErrorResponse,
   ValidationErrorResponse,
@@ -17,6 +11,11 @@ const campaignUpdationValidation = require("./validations/update-campaign");
 const campaignCreationValidation = require("./validations/create-campaign");
 const { campaignModel } = require("./campaignModel");
 const { StatusCodes } = require("http-status-codes");
+const { ethToWei } = require("../blockchain/utils/currencyConvert");
+const { getMilestoneData } = require("./utils/milestonesData");
+const {
+  createCampaignFunction,
+} = require("../blockchain/crowdfundingFunctions");
 
 const getAllCampaigns = async (req, res) => {
   try {
@@ -46,64 +45,47 @@ const getCausesList = async (req, res) => {
 const createCampaign = async (req, res) => {
   try {
     const { body, user } = req;
-    console.log(body);
     const e = campaignCreationValidation(body);
-    console.log(e);
     if (e.error) return new ValidationErrorResponse(res, e.error.message);
 
     let tempStory = body.story;
     tempStory = tempStory.filter((para) => para !== "");
 
-    // convert string date to time in seconds
-    let dateObj = new Date(body.endDate);
-    let numberFormatDate = dateObj.getTime();
-
-    // blockchain part
-    const createBlockchainEntry = async () => {
-      if (!web3) return null;
-      //   return new CustomErrorResponse(res,"Error connecting to web3 network.",StatusCodes.INTERNAL_SERVER_ERROR);
-      const accounts = await web3.eth.getAccounts();
-      const manager = accounts[accountIndex];
-      // Deploy the contract
-      const deployedContract = await new web3.eth.Contract(contractABI)
-        .deploy({
-          data: require("../../web3-trustfunds/build/contracts/Crowdfunding.json")
-            .bytecode,
-          arguments: [body.goal, numberFormatDate],
-        })
-        .send({
-          from: manager,
-          gas: gasLimit,
-        });
-      return deployedContract;
-    };
-
-    //    const deployedContract = await createBlockchainEntry()
-    const deployedContract = {
-      options: {
-        address: "address",
-      },
-    };
-
-    if (!deployedContract || !deployedContract.options.address)
-      return new CustomErrorResponse(
-        res,
-        "Could not create contract.",
-        StatusCodes.BAD_REQUEST
-      );
-
     const newCampaign = new campaignModel({
       ...body,
       story: tempStory,
       creator: user.id,
-      contractAddress: deployedContract.options.address,
+      contractAddress: "address",
     });
 
-    await newCampaign.save();
+    const saved = await newCampaign.save();
+
+    // convert string date to time in seconds
+    let numberFormatDate = new Date(body.endDate).getTime();
+    let goalWei = ethToWei(body.goal);
+    let mongoId = saved._id;
+    let milestones = getMilestoneData(body.milestones);
+
+    const response = await createCampaignFunction(
+      mongoId,
+      "0x6B0edAB93F69696C66e7b1D5081eEbE33DB8f992",
+      goalWei,
+      numberFormatDate,
+      milestones
+    );
+    console.log(response);
+    if (!response.success) {
+      console.log(response.error);
+      return new CustomErrorResponse(
+        res,
+        "Something went wrong while writing blockchain transaction.",
+        StatusCodes.BAD_REQUEST
+      );
+    }
 
     return new SuccessResponse(
       res,
-      "Campaign created successfully and smart contract initiated!",
+      `Campaign created successfully and smart contract initiated! Transaction Hash: ${response.transactionHash}`,
       newCampaign
     );
   } catch (err) {

@@ -1,7 +1,7 @@
-import { contract, senderAddress } from "./connectWeb3";
+const { contract, senderAddress } = require("./connectWeb3");
 
 // Function to create a campaign
-async function createCampaign(
+async function createCampaignFunction(
   mongoId,
   recipient,
   targetAmount,
@@ -9,16 +9,17 @@ async function createCampaign(
   milestones
 ) {
   try {
+    console.log({ mongoId, recipient, targetAmount, deadline, milestones });
     const result = await contract.methods
       .createCampaign(
-        mongoId,
+        mongoId?.toString(),
         recipient,
         targetAmount,
         deadline,
         milestones.deadlines,
         milestones.completionPercentages
       )
-      .send({ from: senderAddress });
+      .send({ from: senderAddress, gas: "5000000" });
 
     return { success: true, transactionHash: result.transactionHash };
   } catch (error) {
@@ -27,11 +28,11 @@ async function createCampaign(
 }
 
 // Function to contribute to a campaign
-async function contributeToCampaign(mongoId, value) {
+async function contributeToCampaignFunction(mongoId, value) {
   try {
     const result = await contract.methods
       .contributeToCampaign(mongoId)
-      .send({ value: value, from: senderAddress });
+      .send({ value: value, from: senderAddress, gas: "5000000" });
 
     return { success: true, transactionHash: result.transactionHash };
   } catch (error) {
@@ -40,11 +41,11 @@ async function contributeToCampaign(mongoId, value) {
 }
 
 // Function to vote on a campaign
-async function vote(mongoId) {
+async function voteFunction(mongoId) {
   try {
     const result = await contract.methods
       .vote(mongoId)
-      .send({ from: senderAddress });
+      .send({ from: senderAddress, gas: "5000000" });
 
     return { success: true, transactionHash: result.transactionHash };
   } catch (error) {
@@ -53,11 +54,11 @@ async function vote(mongoId) {
 }
 
 // Function to finalize milestone and disburse funds
-async function finalizeMilestoneAndDisburseFunds(mongoId) {
+async function finalizeMilestoneAndDisburseFundsFunction(mongoId) {
   try {
     const result = await contract.methods
       .finalizeMilestoneAndDisburseFunds(mongoId)
-      .send({ from: senderAddress });
+      .send({ from: senderAddress, gas: "5000000" });
 
     return { success: true, transactionHash: result.transactionHash };
   } catch (error) {
@@ -74,8 +75,8 @@ async function finalizeMilestoneAndDisburseFunds(mongoId) {
 // };
 
 module.exports = {
-  createCampaign,
-  contributeToCampaign,
-  vote,
-  finalizeMilestoneAndDisburseFunds,
+  createCampaignFunction,
+  contributeToCampaignFunction,
+  voteFunction,
+  finalizeMilestoneAndDisburseFundsFunction,
 };
