@@ -3,8 +3,8 @@ pragma solidity ^0.8.0;
 
 contract Crowdfunding {
   struct Milestone {
-    uint256 date;
-    uint256 percentage;
+    uint256 deadline;
+    uint256 completionPercentage;
     bool reached;
   }
 
@@ -15,13 +15,13 @@ contract Crowdfunding {
     uint256 totalRaised;
     bool completed;
     mapping(address => uint256) contributions;
-    address[] contributorAddress;
+    address[] contributorAddresses;
     mapping(address => bool) voted;
-    uint256 noOfContributors;
+    uint256 numberOfContributors;
     Milestone[] milestones;
   }
 
-  mapping(uint256 => Campaign) public campaign;
+  mapping(uint256 => Campaign) public campaigns;
   mapping(string => uint256) public campaignMongoId;
   uint256 public nextCampaignId;
 
@@ -30,24 +30,24 @@ contract Crowdfunding {
     address payable _recipient,
     uint256 _targetAmount,
     uint256 _deadline,
-    uint256[] memory milestoneDates,
-    uint256[] memory milestonePercentages
+    uint256[] memory milestoneDeadlines,
+    uint256[] memory milestoneCompletionPercentages
   ) public {
     require(_targetAmount > 0, "Target amount must be greater than zero");
     require(_deadline > block.timestamp, "Deadline must be in the future");
 
-    Campaign storage newCampaign = campaign[nextCampaignId];
-    newCampaign.recipient = _recipient;
-    newCampaign.targetAmount = _targetAmount;
-    newCampaign.deadline = _deadline;
-    newCampaign.totalRaised = 0;
-    newCampaign.completed = false;
+    Campaign storage currentCampaign = campaigns[nextCampaignId];
+    currentCampaign.recipient = _recipient;
+    currentCampaign.targetAmount = _targetAmount;
+    currentCampaign.deadline = _deadline;
+    currentCampaign.totalRaised = 0;
+    currentCampaign.completed = false;
 
-    for (uint256 i = 0; i < milestoneDates.length; i++) {
-      newCampaign.milestones.push(
+    for (uint256 i = 0; i < milestoneDeadlines.length; i++) {
+      currentCampaign.milestones.push(
         Milestone({
-          date: milestoneDates[i],
-          percentage: milestonePercentages[i],
+          deadline: milestoneDeadlines[i],
+          completionPercentage: milestoneCompletionPercentages[i],
           reached: false
         })
       );
@@ -57,66 +57,69 @@ contract Crowdfunding {
     nextCampaignId++;
   }
 
-  function addContribution(string memory mongoId) public payable {
+  function contributeToCampaign(string memory mongoId) public payable {
     uint256 campaignId = campaignMongoId[mongoId];
     require(
-      block.timestamp < campaign[campaignId].deadline,
+      block.timestamp < campaigns[campaignId].deadline,
       "Contribution period has ended"
     );
 
-    Campaign storage currentCampaign = campaign[campaignId];
+    Campaign storage currentCampaign = campaigns[campaignId];
     if (currentCampaign.contributions[msg.sender] == 0) {
-      currentCampaign.contributorAddress.push(msg.sender);
-      currentCampaign.noOfContributors++;
+      currentCampaign.contributorAddresses.push(msg.sender);
+      currentCampaign.numberOfContributors++;
     }
     currentCampaign.contributions[msg.sender] += msg.value;
     currentCampaign.totalRaised += msg.value;
   }
 
-  function viewContributions(
+  function getContributionAmount(
     string memory mongoId,
     address senderAddress
   ) public view returns (uint256) {
     uint256 campaignId = campaignMongoId[mongoId];
-    return campaign[campaignId].contributions[senderAddress];
+    return campaigns[campaignId].contributions[senderAddress];
   }
 
   function vote(string memory mongoId) public {
     uint256 campaignId = campaignMongoId[mongoId];
     require(
-      campaign[campaignId].contributions[msg.sender] > 0,
+      campaigns[campaignId].contributions[msg.sender] > 0,
       "You must be a contributor to vote"
     );
 
-    if (campaign[campaignId].voted[msg.sender]) {
-      campaign[campaignId].voted[msg.sender] = false;
+    if (campaigns[campaignId].voted[msg.sender]) {
+      campaigns[campaignId].voted[msg.sender] = false;
     } else {
-      campaign[campaignId].voted[msg.sender] = true;
+      campaigns[campaignId].voted[msg.sender] = true;
     }
   }
 
-  function majorityVote(string memory mongoId) public view returns (bool) {
+  function isMajorityInFavor(string memory mongoId) public view returns (bool) {
     uint256 campaignId = campaignMongoId[mongoId];
-    uint256 votedCount = 0;
+    uint256 votedContributorsCount = 0;
 
-    for (uint256 i = 0; i < campaign[campaignId].noOfContributors; i++) {
-      address contributor = campaign[campaignId].contributorAddress[i];
-      if (campaign[campaignId].voted[contributor]) {
-        votedCount++;
+    for (uint256 i = 0; i < campaigns[campaignId].numberOfContributors; i++) {
+      address contributor = campaigns[campaignId].contributorAddresses[i];
+      if (campaigns[campaignId].voted[contributor]) {
+        votedContributorsCount++;
       }
     }
 
-    return (votedCount * 2 > campaign[campaignId].noOfContributors);
+    return (votedContributorsCount * 2 >
+      campaigns[campaignId].numberOfContributors);
   }
 
-  function checkMilestone(string memory mongoId) public payable {
+  function finalizeMilestoneAndDisburseFunds(
+    string memory mongoId
+  ) public payable {
     uint256 campaignId = campaignMongoId[mongoId];
     require(
-      block.timestamp >= campaign[campaignId].deadline,
+      block.timestamp >= campaigns[campaignId].deadline,
       "Deadline has not been reached yet"
     );
 
-    Campaign storage currentCampaign = campaign[campaignId];
+    Campaign storage currentCampaign = campaigns[campaignId];
     require(!currentCampaign.completed, "Campaign already completed");
 
     uint256 goalAmount = currentCampaign.targetAmount;
@@ -125,19 +128,24 @@ contract Crowdfunding {
     if (totalRaised >= goalAmount) {
       for (uint256 i = 0; i < currentCampaign.milestones.length; i++) {
         Milestone storage milestone = currentCampaign.milestones[i];
-        if (!milestone.reached && block.timestamp >= milestone.date) {
+        if (!milestone.reached && block.timestamp >= milestone.deadline) {
           milestone.reached = true;
           require(
-            majorityVote(mongoId),
+            isMajorityInFavor(mongoId),
             "Majority of the contributors are unhappy with this campaign"
           );
-          uint256 amountToTransfer = (goalAmount * milestone.percentage) / 100;
+          uint256 amountToTransfer = (goalAmount *
+            milestone.completionPercentage) / 100;
           currentCampaign.recipient.transfer(amountToTransfer);
         }
       }
     } else {
-      for (uint256 i = 0; i < currentCampaign.contributorAddress.length; i++) {
-        address contributor = currentCampaign.contributorAddress[i];
+      for (
+        uint256 i = 0;
+        i < currentCampaign.contributorAddresses.length;
+        i++
+      ) {
+        address contributor = currentCampaign.contributorAddresses[i];
         uint256 contribution = currentCampaign.contributions[contributor];
         uint256 refundAmount = (contribution * totalRaised) / goalAmount;
         payable(contributor).transfer(refundAmount);
