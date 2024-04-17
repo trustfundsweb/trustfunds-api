@@ -10,6 +10,8 @@ dotenv.config({ path: path.join(root_dir, `.env`) });
 const cors = require("cors");
 const bodyParser = require("body-parser");
 const connectDb = require("./config/connectDb");
+
+// connect to blockchain
 require("./config/connectWeb3");
 
 // morgan setup
