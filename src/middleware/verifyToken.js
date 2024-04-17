@@ -24,10 +24,7 @@ const verifyToken = (req, res, next) => {
     const id = tokenResponse.payload.id;
 
     if (!mongoose.isValidObjectId(id))
-    throw new CustomError(
-      "Invalid user ID!",
-      StatusCodes.BAD_REQUEST
-    );
+      throw new CustomError("Invalid user ID!", StatusCodes.BAD_REQUEST);
 
     req.user = { id };
     return next();

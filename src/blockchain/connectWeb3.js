@@ -31,4 +31,11 @@ web3.eth
 const gasLimit = 6000000;
 const accountIndex = 9;
 
-module.exports = { contract, gasLimit, accountIndex, web3, contractABI, senderAddress };
+module.exports = {
+  contract,
+  gasLimit,
+  accountIndex,
+  web3,
+  contractABI,
+  senderAddress,
+};
