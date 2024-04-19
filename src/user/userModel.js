@@ -22,6 +22,10 @@ const userSchema = new mongoose.Schema({
     enum: ["user", "admin"],
     default: "user",
   },
+  metamask: {
+    type: String,
+    trim: true,
+  },
 });
 
 const userModel = mongoose.model("User", userSchema);

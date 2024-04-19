@@ -104,6 +104,30 @@ const user = async (req, res) => {
       _id: data._id,
       name: data.name,
       email: data.email,
+      metamask: data.metamask || null,
+    };
+    return new SuccessResponse(res, "User found successfully!", temp);
+  } catch (err) {
+    console.log(err.message, err.status || StatusCodes.INTERNAL_SERVER_ERROR);
+    return new ServerErrorResponse(res);
+  }
+};
+
+const linkMetamask = async (req, res) => {
+  try {
+    const { user } = req;
+    const data = await userModel.findById(user.id);
+    if (!data) return new BadRequestErrorResponse(res, "User not found!");
+
+    const { metamaskAddress } = req.body;
+    data.metamask = metamaskAddress;
+    await data.save();
+
+    const temp = {
+      _id: data._id,
+      name: data.name,
+      email: data.email,
+      metamask: data.metamask,
     };
     return new SuccessResponse(res, "User found successfully!", temp);
   } catch (err) {
@@ -117,4 +141,5 @@ module.exports = {
   login,
   logout,
   user,
+  linkMetamask,
 };
