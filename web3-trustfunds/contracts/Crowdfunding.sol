@@ -1,4 +1,3 @@
-
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
@@ -33,7 +32,7 @@ contract Crowdfunding {
     uint256 _deadline,
     uint256[] memory milestoneDeadlines,
     uint256[] memory milestoneCompletionPercentages
-  ) public {
+  ) public payable {
     require(_targetAmount > 0, "Target amount must be greater than zero");
     require(_deadline > block.timestamp, "Deadline must be in the future");
 
@@ -43,6 +42,11 @@ contract Crowdfunding {
     currentCampaign.deadline = _deadline;
     currentCampaign.totalRaised = 0;
     currentCampaign.completed = false;
+
+    require(
+      milestoneDeadlines.length == milestoneCompletionPercentages.length,
+      "Mismatch in milestone data"
+    );
 
     for (uint256 i = 0; i < milestoneDeadlines.length; i++) {
       currentCampaign.milestones.push(
@@ -63,6 +67,11 @@ contract Crowdfunding {
     require(
       block.timestamp < campaigns[campaignId].deadline,
       "Contribution period has ended"
+    );
+
+    require(
+      !campaigns[campaignId].completed,
+      "Campaign has already been completed"
     );
 
     Campaign storage currentCampaign = campaigns[campaignId];
@@ -154,5 +163,34 @@ contract Crowdfunding {
     }
 
     currentCampaign.completed = true;
+  }
+
+  function getCampaignDetails(
+    string memory mongoId
+  )
+    public
+    view
+    returns (
+      address payable recipient,
+      uint256 targetAmount,
+      uint256 deadline,
+      uint256 totalRaised,
+      bool completed,
+      uint256 numberOfContributors,
+      Milestone[] memory milestones
+    )
+  {
+    uint256 campaignId = campaignMongoId[mongoId];
+
+    Campaign storage currentCampaign = campaigns[campaignId];
+    return (
+      currentCampaign.recipient,
+      currentCampaign.targetAmount,
+      currentCampaign.deadline,
+      currentCampaign.totalRaised,
+      currentCampaign.completed,
+      currentCampaign.numberOfContributors,
+      currentCampaign.milestones
+    );
   }
 }

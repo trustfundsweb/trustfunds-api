@@ -68,7 +68,7 @@ const createCampaign = async (req, res) => {
 
     const response = await createCampaignFunction(
       mongoId,
-      "0x6B0edAB93F69696C66e7b1D5081eEbE33DB8f992",
+      "0x14B8206f5D5028368D193635e70b6f83B2f1dBBd",
       goalWei,
       numberFormatDate,
       milestones
