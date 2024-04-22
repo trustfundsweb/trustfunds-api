@@ -60,9 +60,13 @@ contract Crowdfunding {
 
     campaignMongoId[mongoId] = nextCampaignId;
     nextCampaignId++;
-  }
+  } 
 
-  function contributeToCampaign(string memory mongoId) public payable {
+  function contributeToCampaign(
+    string memory mongoId,
+    address payable _sender,
+    uint256 _value
+  ) public payable {
     uint256 campaignId = campaignMongoId[mongoId];
     require(
       block.timestamp < campaigns[campaignId].deadline,
@@ -75,12 +79,12 @@ contract Crowdfunding {
     );
 
     Campaign storage currentCampaign = campaigns[campaignId];
-    if (currentCampaign.contributions[msg.sender] == 0) {
-      currentCampaign.contributorAddresses.push(msg.sender);
+    if (currentCampaign.contributions[_sender] == 0) {
+      currentCampaign.contributorAddresses.push(_sender);
       currentCampaign.numberOfContributors++;
     }
-    currentCampaign.contributions[msg.sender] += msg.value;
-    currentCampaign.totalRaised += msg.value;
+    currentCampaign.contributions[_sender] += _value;
+    currentCampaign.totalRaised += _value;
   }
 
   function getContributionAmount(

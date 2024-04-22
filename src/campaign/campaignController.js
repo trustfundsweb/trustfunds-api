@@ -15,6 +15,7 @@ const { ethToWei } = require("../blockchain/utils/currencyConvert");
 const { getMilestoneData } = require("./utils/milestonesData");
 const {
   createCampaignFunction,
+  getCampaignDetailsFunction,
 } = require("../blockchain/crowdfundingFunctions");
 
 const getAllCampaigns = async (req, res) => {
@@ -175,6 +176,17 @@ const getCampaignById = async (req, res) => {
   }
 };
 
+const getBlockchainCampaignById = async () => {
+  const { id } = req.params;
+  if (!id) return new ServerErrorResponse(res);
+  const response = await getCampaignDetailsFunction(id);
+  return new SuccessResponse(
+    res,
+    "Campaign fetched successfully!",
+    response.campaignDetails
+  );
+};
+
 const updateCampaign = async (req, res) => {
   try {
     const id = req.params;
@@ -284,6 +296,7 @@ module.exports = {
   getUserCampaigns,
   getUserCampaign,
   getCampaignById,
+  getBlockchainCampaignById,
   updateCampaign,
   deleteCampaign,
   makeDonation,
