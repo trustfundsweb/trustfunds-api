@@ -16,7 +16,7 @@ const getCampaignMessages = async (req, res) => {
     const messages = await forumModel.find({ campaign: id })
       .sort({ timestamp: 'asc' })
       .exec();
-    if (!messages || messages.length <= 0)
+    if (!messages)
       return new CustomErrorResponse(
         res,
         "No messages present.",
