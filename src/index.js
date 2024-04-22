@@ -27,6 +27,7 @@ const pageNotFound = require("./middleware/pageNotFound");
 const indexRoute = require("./index/indexRoute");
 const userRoute = require("./user/userRoute");
 const campaignRoute = require("./campaign/campaignRoute");
+const forumRoute = require("./forum/forumRoute");
 const debugRoute = require("./debug/debugRoute");
 
 // cors
@@ -60,6 +61,7 @@ app.listen(port, () => {
 app.use("/api/v1", indexRoute);
 app.use("/api/v1/users", userRoute);
 app.use("/api/v1/campaigns", campaignRoute);
+app.use("/api/v1/forum", forumRoute);
 app.use("/api/v1/debug", debugRoute);
 
 // middlewares

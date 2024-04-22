@@ -4,16 +4,38 @@ const {
   BadRequestErrorResponse,
 } = require("../shared/error/errorResponse");
 const SuccessResponse = require("../shared/success/successResponse");
-const { forumModel } = require("./forumModel");
+const forumModel  = require("./forumModel");
 const { StatusCodes } = require("http-status-codes");
 
-const getAllMessages = async (req, res) => {
+const getCampaignMessages = async (req, res) => {
   try {
     const id = req.params.id;
     if (!id)
       return new BadRequestErrorResponse(res, "Campaign id not present!");
 
-    const messages = await forumModel.findById(id);
+    const messages = await forumModel.find({campaign: id})
+    .sort({ timestamp: 'asc' }) 
+    .exec();
+    if (!messages || messages.length <= 0)
+      return new CustomErrorResponse(
+        res,
+        "No messages present.",
+        StatusCodes.BAD_REQUEST
+      );
+    return new SuccessResponse(res, "Messages fetched successfully!", messages);
+  } catch (err) {
+    console.error(err.message, err.status);
+    return new ServerErrorResponse(
+      res,
+      "Internal Server Error",
+      StatusCodes.INTERNAL_SERVER_ERROR
+    );
+  }
+};
+
+const getAllMessages = async (req, res) => {
+  try {
+    const messages = await forumModel.find();
     if (!messages || messages.length <= 0)
       return new CustomErrorResponse(
         res,
@@ -33,24 +55,26 @@ const getAllMessages = async (req, res) => {
 
 const sendMessage = async (req, res) => {
   try {
-    const { sender, date, message } = req.body;
+    const { name, date, message } = req.body;
     const { id } = req.params;
 
     if (!id) {
       return new BadRequestErrorResponse(res, "Campaign id not present!");
     }
 
-    if (!sender || !date || !message) {
+    if (!name || !date || !message) {
       return new BadRequestErrorResponse(
         res,
-        "Sender, date, or message missing!"
+        "Name, date, or message missing!"
       );
     }
 
     const newMessage = new forumModel({
-      sender,
+      sender: req.user.id,
+      name,
       date,
       message,
+      campaign: id
     });
 
     const savedMessage = await newMessage.save();
@@ -68,5 +92,6 @@ const sendMessage = async (req, res) => {
 
 module.exports = {
   getAllMessages,
+  getCampaignMessages,
   sendMessage,
 };

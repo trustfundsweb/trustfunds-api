@@ -4,6 +4,16 @@ const forumSchema = new mongoose.Schema({
   sender: {
     type: mongoose.Schema.Types.ObjectId,
     required: true,
+    ref: "User"
+  },
+  name: {
+    type: String,
+    required: true,
+  },
+  campaign: {
+    type: mongoose.Schema.Types.ObjectId,
+    required: true,
+    ref: "Campaign"
   },
   date: {
     type: String,
