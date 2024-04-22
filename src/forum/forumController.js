@@ -4,7 +4,7 @@ const {
   BadRequestErrorResponse,
 } = require("../shared/error/errorResponse");
 const SuccessResponse = require("../shared/success/successResponse");
-const forumModel  = require("./forumModel");
+const forumModel = require("./forumModel");
 const { StatusCodes } = require("http-status-codes");
 
 const getCampaignMessages = async (req, res) => {
@@ -13,9 +13,9 @@ const getCampaignMessages = async (req, res) => {
     if (!id)
       return new BadRequestErrorResponse(res, "Campaign id not present!");
 
-    const messages = await forumModel.find({campaign: id})
-    .sort({ timestamp: 'asc' }) 
-    .exec();
+    const messages = await forumModel.find({ campaign: id })
+      .sort({ timestamp: 'asc' })
+      .exec();
     if (!messages || messages.length <= 0)
       return new CustomErrorResponse(
         res,
@@ -36,7 +36,7 @@ const getCampaignMessages = async (req, res) => {
 const getAllMessages = async (req, res) => {
   try {
     const messages = await forumModel.find();
-    if (!messages || messages.length <= 0)
+    if (!messages)
       return new CustomErrorResponse(
         res,
         "No messages present.",
